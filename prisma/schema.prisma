@@ -1,0 +1,139 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  name            String
+  passwordHash    String
+  avatarUrl       String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  profile         Profile?
+  skills          UserSkill[]
+
+  @@index([email])
+}
+
+model Profile {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  username        String?   @unique
+  headline        String?
+  bio             String?
+  location        String?
+  website         String?
+  githubUrl       String?
+  linkedinUrl     String?
+  availability    Availability @default(FLEXIBLE)
+  experienceLevel ExperienceLevel @default(INTERMEDIATE)
+  userType        UserType?
+  goal            Goal?
+  remotePreference RemotePreference?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Skill {
+  id              String    @id @default(cuid())
+  name            String    @unique
+  category        SkillCategory
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  userSkills      UserSkill[]
+
+  @@index([category])
+}
+
+model UserSkill {
+  id              String    @id @default(cuid())
+  userId          String
+  skillId         String
+  level           SkillLevel
+  yearsExperience Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill           Skill     @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, skillId])
+  @@index([userId])
+  @@index([skillId])
+}
+
+enum ExperienceLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+enum Availability {
+  FIVE_HOURS
+  TEN_HOURS
+  TWENTY_HOURS
+  PART_TIME
+  FULL_TIME
+  FLEXIBLE
+}
+
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+enum SkillCategory {
+  FRONTEND
+  BACKEND
+  FULLSTACK
+  MOBILE
+  DESIGN
+  PRODUCT
+  MARKETING
+  BUSINESS
+  OTHER
+}
+
+enum UserType {
+  FOUNDER
+  DEVELOPER
+  DESIGNER
+  MARKETER
+  CREATOR
+  OTHER
+}
+
+enum Goal {
+  JOIN_PROJECT
+  FIND_TALENT
+  FIND_COFOUNDER
+  BUILD_STARTUP
+  COLLABORATE
+  OTHER
+}
+
+enum RemotePreference {
+  REMOTE_ONLY
+  HYBRID
+  IN_PERSON
+  NO_PREFERENCE
+}
