@@ -1,36 +1,30 @@
-import * as React from "react"
-import { cva, type VariantProps } from "class-variance-authority"
+'use client';
 
-import { cn } from "@/lib/utils"
+import * as React from 'react';
 
-const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
-  {
-    variants: {
-      variant: {
-        default:
-          "border-transparent bg-accent text-accent-foreground hover:bg-accent/80",
-        secondary:
-          "border-transparent bg-card text-foreground hover:bg-card/80",
-        destructive:
-          "border-transparent bg-red-600 text-foreground hover:bg-red-700",
-        outline: "text-foreground border-border",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-    },
-  }
-)
-
-export interface BadgeProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof badgeVariants> {}
-
-function Badge({ className, variant, ...props }: BadgeProps) {
-  return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props} />
-  )
+interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
+  variant?: 'default' | 'secondary' | 'outline' | 'destructive';
 }
 
-export { Badge, badgeVariants }
+const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
+  ({ className, variant = 'default', ...props }, ref) => {
+    const variants = {
+      default: 'border-transparent bg-accent text-accent-foreground',
+      secondary: 'border-transparent bg-secondary text-secondary-foreground',
+      outline: 'text-foreground border border-border',
+      destructive: 'border-transparent bg-destructive text-destructive-foreground',
+    };
+
+    return (
+      <div
+        ref={ref}
+        className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${variants[variant]} ${className || ''}`}
+        {...props}
+      />
+    );
+  }
+);
+
+Badge.displayName = 'Badge';
+
+export { Badge };

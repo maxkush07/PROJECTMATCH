@@ -1,40 +1,40 @@
-import * as React from "react"
-import { cn } from "@/lib/utils"
+'use client';
 
-export interface AvatarProps
-  extends React.ImgHTMLAttributes<HTMLImageElement> {
-  fallback?: string
+import * as React from 'react';
+
+interface AvatarProps extends React.HTMLAttributes<HTMLDivElement> {
+  src?: string;
+  fallback?: string;
+  alt?: string;
 }
 
-const Avatar = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement> & { src?: string; alt?: string; fallback?: string }>((
-  { className, src, alt = "Avatar", fallback, ...props },
-  ref
-) => {
-  const [isLoaded, setIsLoaded] = React.useState(false)
+const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
+  ({ className, src, fallback, alt = 'Avatar', ...props }, ref) => {
+    const [imageError, setImageError] = React.useState(false);
 
-  return (
-    <div
-      ref={ref}
-      className={cn(
-        "relative inline-flex items-center justify-center h-10 w-10 rounded-full bg-card border border-border overflow-hidden",
-        className
-      )}
-      {...props}
-    >
-      {src && (
-        <img
-          src={src}
-          alt={alt}
-          className={cn("h-full w-full object-cover", !isLoaded && "hidden")}
-          onLoad={() => setIsLoaded(true)}
-        />
-      )}
-      {(!src || !isLoaded) && fallback && (
-        <span className="text-xs font-semibold text-foreground">{fallback}</span>
-      )}
-    </div>
-  )
-})
-Avatar.displayName = "Avatar"
+    return (
+      <div
+        ref={ref}
+        className={`relative inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-accent/20 ${className || ''}`}
+        {...props}
+      >
+        {src && !imageError ? (
+          <img
+            src={src}
+            alt={alt}
+            className="h-full w-full object-cover"
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <span className="flex h-full w-full items-center justify-center bg-accent/20 text-sm font-semibold text-accent-foreground">
+            {fallback || '?'}
+          </span>
+        )}
+      </div>
+    );
+  }
+);
 
-export { Avatar }
+Avatar.displayName = 'Avatar';
+
+export { Avatar };

@@ -1,22 +1,25 @@
 'use server';
 
 import { db } from '@/lib/db';
-import { updateProfileSchema } from '@/validations/profile';
-import { z } from 'zod';
+import { updateProfileSchema, type UpdateProfileInput } from '@/validations/profile';
 
 export async function updateProfile(
   userId: string,
-  data: z.infer<typeof updateProfileSchema>
+  input: UpdateProfileInput
 ) {
   try {
-    const validated = updateProfileSchema.parse(data);
+    const validated = updateProfileSchema.safeParse(input);
+
+    if (!validated.success) {
+      return {
+        success: false,
+        error: 'Invalid input',
+      };
+    }
 
     const profile = await db.profile.update({
       where: { userId },
-      data: validated,
-      include: {
-        user: true,
-      },
+      data: validated.data,
     });
 
     return {
@@ -24,12 +27,7 @@ export async function updateProfile(
       profile,
     };
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return {
-        success: false,
-        error: error.errors[0]?.message || 'Validation failed',
-      };
-    }
+    console.error('Update profile error:', error);
     return {
       success: false,
       error: 'Failed to update profile',
@@ -37,36 +35,76 @@ export async function updateProfile(
   }
 }
 
+export async function getUserProfile(userId: string) {
+  try {
+    const profile = await db.profile.findUnique({
+      where: { userId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    });
+
+    return profile;
+  } catch (error) {
+    console.error('Get profile error:', error);
+    return null;
+  }
+}
+
+export async function getAllSkills() {
+  try {
+    const skills = await db.skill.findMany({
+      orderBy: { category: 'asc' },
+    });
+
+    return skills;
+  } catch (error) {
+    console.error('Get skills error:', error);
+    return [];
+  }
+}
+
+export async function getUserSkills(userId: string) {
+  try {
+    const skills = await db.userSkill.findMany({
+      where: { userId },
+      include: { skill: true },
+    });
+
+    return skills;
+  } catch (error) {
+    console.error('Get user skills error:', error);
+    return [];
+  }
+}
+
 export async function addUserSkill(
   userId: string,
   skillId: string,
-  level: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT',
-  yearsExperience: number = 0
+  level: string = 'INTERMEDIATE'
 ) {
   try {
-    const userSkill = await db.userSkill.create({
-      data: {
-        userId,
-        skillId,
-        level,
-        yearsExperience,
+    const userSkill = await db.userSkill.upsert({
+      where: {
+        userId_skillId: { userId, skillId },
       },
-      include: {
-        skill: true,
-      },
+      update: { level },
+      create: { userId, skillId, level },
     });
 
     return {
       success: true,
       userSkill,
     };
-  } catch (error: any) {
-    if (error.code === 'P2002') {
-      return {
-        success: false,
-        error: 'Skill already added',
-      };
-    }
+  } catch (error) {
+    console.error('Add user skill error:', error);
     return {
       success: false,
       error: 'Failed to add skill',
@@ -78,10 +116,7 @@ export async function removeUserSkill(userId: string, skillId: string) {
   try {
     await db.userSkill.delete({
       where: {
-        userId_skillId: {
-          userId,
-          skillId,
-        },
+        userId_skillId: { userId, skillId },
       },
     });
 
@@ -89,6 +124,7 @@ export async function removeUserSkill(userId: string, skillId: string) {
       success: true,
     };
   } catch (error) {
+    console.error('Remove user skill error:', error);
     return {
       success: false,
       error: 'Failed to remove skill',
@@ -96,126 +132,39 @@ export async function removeUserSkill(userId: string, skillId: string) {
   }
 }
 
-export async function getUserProfile(userId: string) {
-  try {
-    const profile = await db.profile.findUnique({
-      where: { userId },
-      include: {
-        user: true,
-      },
-    });
-
-    return profile;
-  } catch (error) {
-    return null;
-  }
-}
-
-export async function getUserSkills(userId: string) {
-  try {
-    const skills = await db.userSkill.findMany({
-      where: { userId },
-      include: {
-        skill: true,
-      },
-    });
-
-    return skills;
-  } catch (error) {
-    return [];
-  }
-}
-
-export async function getAllSkills() {
-  try {
-    const skills = await db.skill.findMany({
-      orderBy: {
-        category: 'asc',
-      },
-    });
-
-    return skills;
-  } catch (error) {
-    return [];
-  }
-}
-
 export async function completeOnboarding(
   userId: string,
-  data: {
-    userType: string;
-    goal: string;
-    availability: string;
-    experienceLevel: string;
-    skillIds: string[];
-  }
+  data: any
 ) {
   try {
-    // Update profile with onboarding data
-    await db.profile.update({
+    const profile = await db.profile.update({
       where: { userId },
       data: {
         availability: data.availability,
         experienceLevel: data.experienceLevel,
+        userType: data.userType,
+        goal: data.goal,
       },
     });
 
     // Add skills
-    for (const skillId of data.skillIds) {
-      await db.userSkill.create({
-        data: {
-          userId,
-          skillId,
-          level: 'INTERMEDIATE',
-          yearsExperience: 1,
-        },
-      }).catch(() => null);
+    if (data.skillIds && Array.isArray(data.skillIds)) {
+      await Promise.all(
+        data.skillIds.map((skillId: string) =>
+          addUserSkill(userId, skillId, 'INTERMEDIATE')
+        )
+      );
     }
 
     return {
       success: true,
+      profile,
     };
   } catch (error) {
+    console.error('Complete onboarding error:', error);
     return {
       success: false,
       error: 'Failed to complete onboarding',
     };
-  }
-}
-
-export async function calculateProfileCompletion(userId: string) {
-  try {
-    const profile = await db.profile.findUnique({
-      where: { userId },
-      include: {
-        user: true,
-      },
-    });
-
-    if (!profile) return 0;
-
-    let completion = 0;
-
-    // Basic information (20%)
-    if (profile.user?.name) completion += 20;
-
-    // Bio (10%)
-    if (profile.bio) completion += 10;
-
-    // Skills (30%)
-    const skills = await db.userSkill.count({
-      where: { userId },
-    });
-    if (skills > 0) completion += 30;
-
-    // Availability (20%)
-    if (profile.availability) completion += 20;
-
-    // Experience (20%)
-    if (profile.experienceLevel) completion += 20;
-
-    return Math.min(completion, 100);
-  } catch (error) {
-    return 0;
   }
 }

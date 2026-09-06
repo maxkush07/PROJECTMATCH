@@ -1,0 +1,6 @@
+{
+  "$schema": "https://nextjs.org/schema.json",
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6"
+  }
+}

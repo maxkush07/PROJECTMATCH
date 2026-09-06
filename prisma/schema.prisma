@@ -1,139 +1,118 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id              String    @id @default(cuid())
-  email           String    @unique
-  name            String
-  passwordHash    String
-  avatarUrl       String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  passwordHash  String
+  avatarUrl     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  profile         Profile?
-  skills          UserSkill[]
+  profile       Profile?
+  skills        UserSkill[]
+  connections   Connection[] @relation("userConnections")
+  connectedBy   Connection[] @relation("userConnectedBy")
+  sentMessages  Message[] @relation("sentMessages")
+  receivedMessages Message[] @relation("receivedMessages")
 
-  @@index([email])
+  @@map("users")
 }
 
 model Profile {
-  id              String    @id @default(cuid())
-  userId          String    @unique
-  username        String?   @unique
-  headline        String?
-  bio             String?
-  location        String?
-  website         String?
-  githubUrl       String?
-  linkedinUrl     String?
-  availability    Availability @default(FLEXIBLE)
-  experienceLevel ExperienceLevel @default(INTERMEDIATE)
-  userType        UserType?
-  goal            Goal?
-  remotePreference RemotePreference?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  bio               String?
+  availability      String   @default("PART_TIME")
+  experienceLevel   String   @default("INTERMEDIATE")
+  location          String?
+  website           String?
+  twitter           String?
+  github            String?
+  linkedin          String?
+  userType          String?
+  goal              String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
+  @@map("profiles")
 }
 
 model Skill {
-  id              String    @id @default(cuid())
-  name            String    @unique
-  category        SkillCategory
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id        String    @id @default(cuid())
+  name      String    @unique
+  category  String
+  createdAt DateTime  @default(now())
 
-  userSkills      UserSkill[]
+  users     UserSkill[]
 
-  @@index([category])
+  @@map("skills")
 }
 
 model UserSkill {
-  id              String    @id @default(cuid())
-  userId          String
-  skillId         String
-  level           SkillLevel
-  yearsExperience Int       @default(0)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id                String   @id @default(cuid())
+  userId            String
+  skillId           String
+  level             String   @default("INTERMEDIATE")
+  yearsExperience   Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  skill           Skill     @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill             Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
 
   @@unique([userId, skillId])
-  @@index([userId])
-  @@index([skillId])
+  @@map("user_skills")
 }
 
-enum ExperienceLevel {
-  BEGINNER
-  INTERMEDIATE
-  ADVANCED
-  EXPERT
+model Connection {
+  id            String    @id @default(cuid())
+  userAId       String
+  userBId       String
+  status        String    @default("PENDING") // PENDING, ACCEPTED, REJECTED, BLOCKED
+  matchScore    Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  userA         User      @relation("userConnections", fields: [userAId], references: [id], onDelete: Cascade)
+  userB         User      @relation("userConnectedBy", fields: [userBId], references: [id], onDelete: Cascade)
+
+  @@unique([userAId, userBId])
+  @@map("connections")
 }
 
-enum Availability {
-  FIVE_HOURS
-  TEN_HOURS
-  TWENTY_HOURS
-  PART_TIME
-  FULL_TIME
-  FLEXIBLE
+model Message {
+  id          String    @id @default(cuid())
+  senderId    String
+  receiverId  String
+  content     String
+  read        Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  sender      User      @relation("sentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver    User      @relation("receivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
 }
 
-enum SkillLevel {
-  BEGINNER
-  INTERMEDIATE
-  ADVANCED
-  EXPERT
-}
+model Project {
+  id          String    @id @default(cuid())
+  title       String
+  description String
+  createdBy   String
+  status      String    @default("ACTIVE") // ACTIVE, COMPLETED, CANCELLED
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-enum SkillCategory {
-  FRONTEND
-  BACKEND
-  FULLSTACK
-  MOBILE
-  DESIGN
-  PRODUCT
-  MARKETING
-  BUSINESS
-  OTHER
-}
-
-enum UserType {
-  FOUNDER
-  DEVELOPER
-  DESIGNER
-  MARKETER
-  CREATOR
-  OTHER
-}
-
-enum Goal {
-  JOIN_PROJECT
-  FIND_TALENT
-  FIND_COFOUNDER
-  BUILD_STARTUP
-  COLLABORATE
-  OTHER
-}
-
-enum RemotePreference {
-  REMOTE_ONLY
-  HYBRID
-  IN_PERSON
-  NO_PREFERENCE
+  @@map("projects")
 }

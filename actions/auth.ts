@@ -2,60 +2,65 @@
 
 import { db } from '@/lib/db';
 import { hashPassword } from '@/lib/auth';
-import { registerSchema } from '@/validations/auth';
-import { z } from 'zod';
+import { registerSchema, type RegisterInput } from '@/validations/auth';
 
-export async function registerUser(
-  data: z.infer<typeof registerSchema>
-) {
+export async function registerUser(input: RegisterInput) {
   try {
-    const validated = registerSchema.parse(data);
+    const validated = registerSchema.safeParse(input);
 
-    // Check if email already exists
+    if (!validated.success) {
+      return {
+        success: false,
+        error: 'Invalid input',
+        details: validated.error.errors,
+      };
+    }
+
+    const { name, email, password } = validated.data;
+
+    // Check if user already exists
     const existingUser = await db.user.findUnique({
-      where: { email: validated.email },
+      where: { email },
     });
 
     if (existingUser) {
       return {
         success: false,
-        error: 'Email already in use',
+        error: 'User with this email already exists',
       };
     }
 
     // Hash password
-    const passwordHash = await hashPassword(validated.password);
+    const passwordHash = await hashPassword(password);
 
     // Create user
     const user = await db.user.create({
       data: {
-        email: validated.email,
-        name: validated.name,
+        name,
+        email,
         passwordHash,
-      },
-    });
-
-    // Create profile
-    await db.profile.create({
-      data: {
-        userId: user.id,
+        profile: {
+          create: {
+            availability: 'PART_TIME',
+            experienceLevel: 'INTERMEDIATE',
+          },
+        },
       },
     });
 
     return {
       success: true,
-      userId: user.id,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      },
     };
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return {
-        success: false,
-        error: error.errors[0]?.message || 'Validation failed',
-      };
-    }
+    console.error('Registration error:', error);
     return {
       success: false,
-      error: 'Registration failed',
+      error: 'Failed to register user',
     };
   }
 }
@@ -66,10 +71,17 @@ export async function getUserByEmail(email: string) {
       where: { email },
       include: {
         profile: true,
+        skills: {
+          include: {
+            skill: true,
+          },
+        },
       },
     });
+
     return user;
   } catch (error) {
+    console.error('Get user error:', error);
     return null;
   }
 }

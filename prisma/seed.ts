@@ -1,101 +1,108 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { db } from '@/lib/db';
+import { hashPassword } from '@/lib/auth';
 
 async function main() {
   console.log('🌱 Starting database seed...');
 
-  // Clear existing skills
-  await prisma.skill.deleteMany({});
+  // Create skills
+  const skills = await Promise.all([
+    db.skill.upsert({
+      where: { name: 'React' },
+      update: {},
+      create: { name: 'React', category: 'Frontend' },
+    }),
+    db.skill.upsert({
+      where: { name: 'Vue.js' },
+      update: {},
+      create: { name: 'Vue.js', category: 'Frontend' },
+    }),
+    db.skill.upsert({
+      where: { name: 'Angular' },
+      update: {},
+      create: { name: 'Angular', category: 'Frontend' },
+    }),
+    db.skill.upsert({
+      where: { name: 'Node.js' },
+      update: {},
+      create: { name: 'Node.js', category: 'Backend' },
+    }),
+    db.skill.upsert({
+      where: { name: 'Python' },
+      update: {},
+      create: { name: 'Python', category: 'Backend' },
+    }),
+    db.skill.upsert({
+      where: { name: 'Java' },
+      update: {},
+      create: { name: 'Java', category: 'Backend' },
+    }),
+    db.skill.upsert({
+      where: { name: 'TypeScript' },
+      update: {},
+      create: { name: 'TypeScript', category: 'Language' },
+    }),
+    db.skill.upsert({
+      where: { name: 'JavaScript' },
+      update: {},
+      create: { name: 'JavaScript', category: 'Language' },
+    }),
+    db.skill.upsert({
+      where: { name: 'UI/UX Design' },
+      update: {},
+      create: { name: 'UI/UX Design', category: 'Design' },
+    }),
+    db.skill.upsert({
+      where: { name: 'Graphic Design' },
+      update: {},
+      create: { name: 'Graphic Design', category: 'Design' },
+    }),
+    db.skill.upsert({
+      where: { name: 'Product Management' },
+      update: {},
+      create: { name: 'Product Management', category: 'Management' },
+    }),
+    db.skill.upsert({
+      where: { name: 'Project Management' },
+      update: {},
+      create: { name: 'Project Management', category: 'Management' },
+    }),
+  ]);
 
-  const skills = [
-    // Frontend
-    { name: 'React', category: 'FRONTEND' },
-    { name: 'Next.js', category: 'FRONTEND' },
-    { name: 'TypeScript', category: 'FRONTEND' },
-    { name: 'JavaScript', category: 'FRONTEND' },
-    { name: 'Tailwind CSS', category: 'FRONTEND' },
-    { name: 'Vue.js', category: 'FRONTEND' },
-    { name: 'Angular', category: 'FRONTEND' },
-    { name: 'HTML/CSS', category: 'FRONTEND' },
-    
-    // Backend
-    { name: 'Node.js', category: 'BACKEND' },
-    { name: 'Python', category: 'BACKEND' },
-    { name: 'PHP', category: 'BACKEND' },
-    { name: 'Java', category: 'BACKEND' },
-    { name: 'Go', category: 'BACKEND' },
-    { name: 'Rust', category: 'BACKEND' },
-    { name: 'Laravel', category: 'BACKEND' },
-    { name: 'Django', category: 'BACKEND' },
-    { name: 'Express.js', category: 'BACKEND' },
-    
-    // Fullstack
-    { name: 'MERN Stack', category: 'FULLSTACK' },
-    { name: 'MEAN Stack', category: 'FULLSTACK' },
-    { name: 'Supabase', category: 'FULLSTACK' },
-    { name: 'Firebase', category: 'FULLSTACK' },
-    
-    // Mobile
-    { name: 'React Native', category: 'MOBILE' },
-    { name: 'Flutter', category: 'MOBILE' },
-    { name: 'Swift', category: 'MOBILE' },
-    { name: 'Kotlin', category: 'MOBILE' },
-    
-    // Design
-    { name: 'Figma', category: 'DESIGN' },
-    { name: 'UI/UX', category: 'DESIGN' },
-    { name: 'Graphic Design', category: 'DESIGN' },
-    { name: 'Adobe XD', category: 'DESIGN' },
-    { name: 'Sketch', category: 'DESIGN' },
-    { name: 'Wireframing', category: 'DESIGN' },
-    
-    // Product
-    { name: 'Product Management', category: 'PRODUCT' },
-    { name: 'Product Strategy', category: 'PRODUCT' },
-    { name: 'User Research', category: 'PRODUCT' },
-    
-    // Marketing
-    { name: 'Content Marketing', category: 'MARKETING' },
-    { name: 'Social Media', category: 'MARKETING' },
-    { name: 'SEO', category: 'MARKETING' },
-    { name: 'SEM', category: 'MARKETING' },
-    { name: 'Email Marketing', category: 'MARKETING' },
-    { name: 'Growth Hacking', category: 'MARKETING' },
-    { name: 'Community Management', category: 'MARKETING' },
-    { name: 'Copywriting', category: 'MARKETING' },
-    
-    // Business
-    { name: 'Business Development', category: 'BUSINESS' },
-    { name: 'Sales', category: 'BUSINESS' },
-    { name: 'Fundraising', category: 'BUSINESS' },
-    { name: 'Accounting', category: 'BUSINESS' },
-    { name: 'Legal', category: 'BUSINESS' },
-    
-    // Other
-    { name: 'AI/Machine Learning', category: 'OTHER' },
-    { name: 'Data Science', category: 'OTHER' },
-    { name: 'DevOps', category: 'OTHER' },
-    { name: 'Cloud Architecture', category: 'OTHER' },
-    { name: 'Video Editing', category: 'OTHER' },
-    { name: 'Audio Production', category: 'OTHER' },
-  ];
+  console.log(`✅ Created ${skills.length} skills`);
 
-  for (const skill of skills) {
-    await prisma.skill.create({
-      data: skill,
-    });
-  }
+  // Create demo users
+  const hashedPassword = await hashPassword('password123');
 
-  console.log('✅ Database seeded successfully!');
+  const demoUser = await db.user.upsert({
+    where: { email: 'demo@projectmatch.com' },
+    update: {},
+    create: {
+      email: 'demo@projectmatch.com',
+      name: 'Demo User',
+      passwordHash: hashedPassword,
+      profile: {
+        create: {
+          bio: 'Full-stack developer passionate about building amazing products',
+          availability: 'FULL_TIME',
+          experienceLevel: 'ADVANCED',
+          location: 'San Francisco, CA',
+          github: 'https://github.com',
+          linkedin: 'https://linkedin.com',
+          userType: 'Developer',
+          goal: 'Find a co-founder',
+        },
+      },
+    },
+    include: { profile: true },
+  });
+
+  console.log(`✅ Created demo user: ${demoUser.email}`);
+
+  console.log('🎉 Database seed completed successfully!');
 }
 
 main()
-  .then(async () => {
-    await prisma.$disconnect();
-  })
-  .catch(async (e) => {
+  .catch((e) => {
     console.error('❌ Error seeding database:', e);
-    await prisma.$disconnect();
     process.exit(1);
   });
