@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .container {
+    @apply max-w-7xl mx-auto px-4;
+  }
+
+  .btn-primary {
+    @apply bg-accent text-accent-foreground hover:bg-accent/90 px-4 py-2 rounded-md;
+  }
+
+  .btn-secondary {
+    @apply bg-card text-foreground hover:bg-card/80 px-4 py-2 rounded-md border border-border;
+  }
+}
