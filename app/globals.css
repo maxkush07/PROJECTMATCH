@@ -1,27 +1,43 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 @layer base {
   :root {
-    color-scheme: dark;
+    --background: 15 23% 8%;
+    --foreground: 0 0% 100%;
+    --card: 15 23% 12%;
+    --card-foreground: 0 0% 100%;
+    --primary: 240 10% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 10% 40%;
+    --secondary-foreground: 0 0% 100%;
+    --accent: 30 100% 50%;
+    --accent-foreground: 15 23% 8%;
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --muted: 240 10% 40%;
+    --muted-foreground: 240 10% 60%;
+    --input: 15 23% 15%;
+    --border: 15 23% 20%;
+    --ring: 30 100% 50%;
+    --radius: 0.5rem;
   }
 
-  body {
-    @apply bg-background text-foreground;
-  }
-}
-
-@layer components {
-  .container {
-    @apply max-w-7xl mx-auto px-4;
-  }
-
-  .btn-primary {
-    @apply bg-accent text-accent-foreground hover:bg-accent/90 px-4 py-2 rounded-md;
-  }
-
-  .btn-secondary {
-    @apply bg-card text-foreground hover:bg-card/80 px-4 py-2 rounded-md border border-border;
+  [data-theme="light"] {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 10%;
+    --card: 0 0% 95%;
+    --card-foreground: 240 10% 10%;
+    --primary: 240 10% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 10% 60%;
+    --secondary-foreground: 0 0% 100%;
+    --accent: 30 100% 50%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --muted: 240 10% 85%;
+    --muted-foreground: 240 10% 40%;
+    --input: 0 0% 90%;
+    --border: 240 10% 85%;
+    --ring: 30 100% 50%;
+    --radius: 0.5rem;
   }
 }
